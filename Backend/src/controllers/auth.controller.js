@@ -1,6 +1,5 @@
 import { userModel } from '../models/user.model.js'
-import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
+import { generateToken } from '../utils/token.js'
 
 export const UserRegister = async(req,res)=>{
     try {
@@ -31,20 +30,18 @@ export const UserRegister = async(req,res)=>{
             })
         }
 
-        const HasPass = await bcrypt.hash(password,10)
+        // const HasPass = await bcrypt.hash(password,10)
 
 
         const NewUser = await userModel.create({
             email,
-            password:HasPass,
+            password,
             username,
             bio,
             profileImage
         })
 
-        const JWT_Token = jwt.sign({id:NewUser._id},process.env.JWT_SECRET_KEY,{
-            expiresIn:"1D",
-        })
+        const JWT_Token = generateToken(NewUser._id)
 
         res.cookie("jwt_token",JWT_Token,{
             httpOnly:true,
@@ -93,7 +90,8 @@ export const UserLogin = async(req,res)=>{
             })
         }
 
-        const DecodePassword = await bcrypt.compare(password,isExistedUser.password)
+        // const DecodePassword = await bcrypt.compare(password,isExistedUser.password)
+        const DecodePassword = isExistedUser.comparePassword(password)
 
         if (!DecodePassword) {
             return res.status(401).json({
@@ -101,9 +99,7 @@ export const UserLogin = async(req,res)=>{
             })
         }
 
-        const jwt_token = jwt.sign({id:isExistedUser._id},process.env.JWT_SECRET_KEY,{
-            expiresIn:"1D"
-        })
+        const jwt_token = generateToken(isExistedUser._id)
 
         res.cookie("jwt_token",jwt_token,{
             httpOnly:true,

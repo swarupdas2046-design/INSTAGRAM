@@ -7,6 +7,9 @@ const app = express()
 app.use(express.json())
 app.use(cookie())
 
+app.use(express.urlencoded({extended:true}))
+
+
 // auth routes 
 app.use("/api/auth",authRouter)
 
