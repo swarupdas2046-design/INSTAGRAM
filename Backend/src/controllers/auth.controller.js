@@ -1,126 +1,61 @@
-import { userModel } from '../models/user.model.js'
-import { generateToken } from '../utils/token.js'
+import { loginService, registerService } from '../services/user.service.js'
+import ApiResponse from '../utils/apiResponse.js'
+import asyncHandler from '../utils/asyncHandler.js'
 
-export const UserRegister = async(req,res)=>{
-    try {
-        const {email,password,username,bio,profileImage} = req.body
+const userData = (user)=>{
+    return{
+        _id:user._id,
+        email:user.email,
+        username:user.username,
+        bio:user.bio,
+        profileImage:user.profileImage,
+        createdAt:user.createdAt,
+        updatedAt:user.updatedAt
+    }
+}
 
-        if (!email||!password||!username) {
-            return res.status(400).json({
-                message:(!email ? "Email is required" : (!password ? "Password is required" : "Username is required"))
-            })
-        }
+/**
+ * Register Controller
+ * api -> http://localhost:3000/api/auth/register
+ * method -> POST
+ * req.body -> email,password,username,bio,profileImage
+ * res-> {success:true,message:"User Register Successfully",data:{_id,email,username,bio,profileImage,createdAt,updatedAt}}
+ * access -> Public
+ */
 
-        if (password.length<6 || username.length<3) {
-            return res.status(400).json({
-                message:(password.length<6 ? "Password must be at least 6 characters" : "Username must be at least 3 characters")
-            })
-        }
-        
-        const isExistedUser = await userModel.findOne({
-            $or:[
-                {email},
-                {username}
-            ]
-        })
-
-        if (isExistedUser) {
-            return res.status(409).json({
-                message:(isExistedUser.email == email ? "Email already exists" : "Username already exists")
-            })
-        }
-
-        // const HasPass = await bcrypt.hash(password,10)
-
-
-        const NewUser = await userModel.create({
-            email,
-            password,
-            username,
-            bio,
-            profileImage
-        })
-
-        const JWT_Token = generateToken(NewUser._id)
+export const UserRegister = asyncHandler(async(req,res)=>{
+    
+        const {NewUser,JWT_Token} = await registerService(req.body)
 
         res.cookie("jwt_token",JWT_Token,{
             httpOnly:true,
         })
 
-        return res.status(201).json({
-            message:"User created Successfully",
-            User:{
-                email:NewUser.email,
-                username:NewUser.username,
-                bio:NewUser.bio,
-                profileImage:NewUser.profileImage
-            }
-        })
+        return res.status(201).json(new ApiResponse("User Register Successfully",userData(NewUser)))
 
-
-    } catch (error) {
-        return res.status(500).json({
-            message:"Internal server Error",
-            error:error.message
-        })
-    }
 }
+)
 
-export const UserLogin = async(req,res)=>{
-    try {
+/**
+ * Login Controller
+ * api -> http://localhost:3000/api/auth/login
+ * method -> POST
+ * req.body -> email,password,username
+ * res-> {success:true,message:"Login Successfully",data:{_id,email,username,bio,profileImage,createdAt,updatedAt}}
+ * access -> Public
+ */
+
+
+export const UserLogin = asyncHandler(async(req,res)=>{
         
-        const {email,password,username} = req.body
-
-        if (password.length<6) {
-            return res.status(400).json({
-                message:"Password must be at least 6 characters"
-            })
-        }
-
-        const isExistedUser = await userModel.findOne({
-            $or:[
-                {username:username},
-                {email:email}
-            ]
-        })
-
-        if (!isExistedUser) {
-            return res.status(404).json({
-                message:(isExistedUser.email == email ? "Email not found" : "Username not found")
-            })
-        }
-
-        // const DecodePassword = await bcrypt.compare(password,isExistedUser.password)
-        const DecodePassword = isExistedUser.comparePassword(password)
-
-        if (!DecodePassword) {
-            return res.status(401).json({
-                message:"Invalid Password"
-            })
-        }
-
-        const jwt_token = generateToken(isExistedUser._id)
+        const {isExistedUser,jwt_token} = await loginService(req.body)
 
         res.cookie("jwt_token",jwt_token,{
             httpOnly:true,
         })
 
-        return res.status(200).json({
-            message:"Login Successfully",
-            User:{
-                email:isExistedUser.email,
-                username:isExistedUser.username,
-                bio:isExistedUser.bio,
-                profileImage:isExistedUser.profileImage
-            }
-        })
+        return res.status(200).json(new ApiResponse("Login Successfully",userData(isExistedUser)))
     
-    
-    } catch (error) {
-        return res.status(500).json({
-            message:"Internal server Error",
-            error:error.message,
-        })
-    }
-}
 
+}
+)
