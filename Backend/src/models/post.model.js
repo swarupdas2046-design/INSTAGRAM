@@ -6,10 +6,19 @@ const postSchema = new mongoose.Schema({
         type:String,
         default:""
     },
-    imageUrl:{
-        type:String,
-        required:[true,"Image is required for creating a post"]
-    },
+    imageUrl:[
+        {
+            url:{
+                type:String,
+                required:[true,"Image URL is required for creating a post"]
+            },
+
+            fieldId:{
+                type:String,
+                required:[true,"Field id is required for creating a post"]
+            }
+        }
+    ],
     user:{
         type:mongoose.Schema.ObjectId,
         ref:"UserInfos",

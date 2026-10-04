@@ -1,25 +1,20 @@
-import express from 'express'
-import multer from 'multer'
-const Upload = multer({storage:multer.memoryStorage()})
-const postRouter = express.Router()
+import express from "express";
+import multer from "multer";
+import { PostController } from "../controllers/post.controller.js";
+import authMiddleware from "../middlewares/auth.middleware.js";
+import ApiResponse from "../utils/apiResponse.js";
+const Upload = multer({ storage: multer.memoryStorage() });
+const postRouter = express.Router();
 
-postRouter.post("/",Upload.single("imageUrl"),(req,res)=>{
-            console.log("Coming from Client Side :------->",req.body,req.file);
-            
-    // try {
-        
-    // } catch (error) {
-    //     return res.status(500).json({
-    //         message:"Internal server error",
-    //         error:error.message
-    //     })
-    // }
+/**
+ * -
+ */
+
+postRouter.post("/", authMiddleware,Upload.single("imageUrl"),PostController);
+
+postRouter.get("/healthy",authMiddleware,(req,res)=>{
+    const user = req.user
+    return res.status(200).json(new ApiResponse("Server is healthy",user))
 })
 
-
-
-
-
-
-
-export default postRouter
+export default postRouter;
