@@ -3,14 +3,26 @@ import ApiError from "../utils/apiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { Verify_Token } from "../utils/token.js";
 
+/**
+ * --- auth middleware ---
+ * - protecting routes
+ * - check if the user is Authenticated Users
+ */
+
 const authMiddleware = asyncHandler(async (req, res, next) => {
   const token = req.cookies.jwt_token;
 
   if (!token) throw new ApiError("Unauthorized", 401);
 
-  const decode = Verify_Token(token);
+  let decode = null
 
-  if (!decode) throw new ApiError("Unauthorized", 401);
+    try {
+        decode = Verify_Token(token);
+    } catch (error) {
+      throw new ApiError("User not authorized",401)
+    }
+
+  // if (!decode) throw new ApiError("Unauthorized", 401);
 
   const User = await userModel.findById(decode.id);
 
