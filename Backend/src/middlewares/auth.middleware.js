@@ -22,6 +22,9 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
       throw new ApiError("User not authorized",401)
     }
 
+    console.log("decoded Token:---->",decode);
+    
+
   // if (!decode) throw new ApiError("Unauthorized", 401);
 
   const User = await userModel.findById(decode.id);
