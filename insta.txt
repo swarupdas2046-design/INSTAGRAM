@@ -1,17 +1,998 @@
-==> Authentication
-    => register (1. user ka data save krna. 2. token user ko dena)
-    => login
-    => logout (token blacklisting)
-    => [OTP based registration]
+Instagram Clone Backend - Project Documentation
+================================================
 
-==> post
-    => create
-    => can see the feed
-    => like posts (collection types)
-    => save post
+Yeh file future reference ke liye hai: agar beginner is project ko banana chahe, ya kuch months baad project open ho, to easily samajh aaye ki structure kya hai, routes ka flow kya hai, models/controllers/middlewares ka kaam kya hai, aur next feature kaise build karna hai.
 
-==> users
-    => followers
-    => following
 
+1. Project ka current status
+----------------------------
+
+Abhi project ka backend foundation ban chuka hai.
+
+Implemented features:
+
+1. Express server setup
+2. MongoDB connection using Mongoose
+3. Environment variables using dotenv
+4. User auth:
+   - Register
+   - Login
+   - JWT token generate
+   - JWT cookie me save
+   - Password hashing using bcrypt
+5. Protected routes using auth middleware
+6. Post feature:
+   - Authenticated user post create kar sakta hai
+   - Image multer memory storage se receive hoti hai
+   - Image ImageKit par upload hoti hai
+   - Post metadata MongoDB me save hota hai
+   - Logged-in user apne posts fetch kar sakta hai
+   - Logged-in user apne single post details fetch kar sakta hai
+7. Follow model ka basic schema bana hua hai, but follow/unfollow routes abhi implement nahi hue.
+
+Planned/not completed:
+
+1. Logout
+2. Token blacklist/logout handling
+3. OTP based registration
+4. Global feed
+5. Like posts
+6. Save posts
+7. Follow/unfollow APIs
+8. Followers/following list APIs
+9. Frontend
+
+
+2. Tech stack
+-------------
+
+Backend:
+
+1. Node.js
+2. Express.js
+3. MongoDB
+4. Mongoose
+5. bcrypt
+6. jsonwebtoken
+7. cookie-parser
+8. multer
+9. imagekit
+10. dotenv
+
+Package scripts:
+
+1. `npm run dev` - nodemon ke sath server start karta hai.
+2. `npm start` - normal node server start karta hai.
+3. `npm test` - abhi tests setup nahi hain.
+
+
+3. Folder structure
+-------------------
+
+Current structure:
+
+Instagram/
+  Backend/
+    package.json
+    package-lock.json
+    server.js
+    src/
+      app.js
+      config/
+        database.js
+        imagekit.js
+      controllers/
+        auth.controller.js
+        post.controller.js
+      middlewares/
+        auth.middleware.js
+        error.middleware.js
+      models/
+        user.model.js
+        post.model.js
+        follow.model.js
+      routes/
+        auth.route.js
+        post.route.js
+      services/
+        user.service.js
+      utils/
+        apiError.js
+        apiResponse.js
+        asyncHandler.js
+        token.js
+  edge-collection.md
+  insta.txt
+  README.md
+
+
+4. Backend startup flow
+-----------------------
+
+Step by step request start hone se pehle project ka flow:
+
+1. `Backend/server.js` run hota hai.
+2. `dotenv/config` environment variables load karta hai.
+3. `app` import hota hai from `src/app.js`.
+4. `Database()` call hota hai from `src/config/database.js`.
+5. `Database()` `process.env.MONGO_URL` se MongoDB connect karta hai.
+6. Server `PORT` env se port leta hai, nahi mila to `5000` use karta hai.
+7. `app.listen(port)` backend ko live kar deta hai.
+
+Required `.env` values:
+
+PORT=5000
+MONGO_URL=your_mongodb_connection_string
+JWT_SECRET_KEY=your_jwt_secret
+IMAGEKIT_URL_ENDPOINTS=your_imagekit_url_endpoint
+IMAGEKIT_PUBLIC_SECRET=your_imagekit_public_key
+IMAGEKIT_PRIVATE_SECRET=your_imagekit_private_key
+
+
+5. app.js ka role
+-----------------
+
+File: `Backend/src/app.js`
+
+Yeh main Express app configure karta hai.
+
+Middlewares:
+
+1. `express.json()` - JSON body parse karta hai.
+2. `cookie-parser` - cookies read karta hai. Auth middleware `req.cookies.jwt_token` isi se read karta hai.
+3. `express.urlencoded({ extended: true })` - form/urlencoded data parse karta hai.
+
+Routes:
+
+1. `/api/auth` - auth routes yahan mount hain.
+2. `/api/post` - post routes yahan mount hain.
+
+Last middleware:
+
+1. `errorMiddleware` - route/controller/service errors ko final JSON error response banata hai.
+
+
+6. Common utility pattern
+-------------------------
+
+Project me controllers ko clean rakhne ke liye utils banaye gaye hain.
+
+6.1 `ApiResponse`
+
+File: `Backend/src/utils/apiResponse.js`
+
+Successful response ka common format:
+
+{
+  success: true,
+  message: "...",
+  data: ...
+}
+
+6.2 `ApiError`
+
+File: `Backend/src/utils/apiError.js`
+
+Custom error throw karne ke liye:
+
+throw new ApiError("Unauthorized", 401)
+
+Isme `message` and `statusCode` store hota hai.
+
+6.3 `asyncHandler`
+
+File: `Backend/src/utils/asyncHandler.js`
+
+Express async controllers me try/catch baar-baar likhne se bachata hai.
+
+Flow:
+
+1. Controller function ko wrap karta hai.
+2. Agar promise reject hota hai ya error throw hota hai to `.catch(next)` call karta hai.
+3. Error automatically `errorMiddleware` tak pahunch jata hai.
+
+6.4 `token.js`
+
+File: `Backend/src/utils/token.js`
+
+Functions:
+
+1. `generateToken(userId)`
+   - JWT create karta hai.
+   - Payload: `{ id: userId }`
+   - Secret: `process.env.JWT_SECRET_KEY`
+   - Expiry: `1D`
+
+2. `Verify_Token(Token)`
+   - JWT verify karta hai.
+   - Valid token hai to decoded payload return karta hai.
+
+
+7. Error handling flow
+----------------------
+
+File: `Backend/src/middlewares/error.middleware.js`
+
+Error flow:
+
+1. Controller/service/middleware me `throw new ApiError(...)`.
+2. Controller `asyncHandler` se wrapped hai.
+3. `asyncHandler` error ko `next(err)` se Express ko deta hai.
+4. `app.js` ke end me `errorMiddleware` run hota hai.
+5. Response format:
+
+{
+  success: false,
+  message: "Error message"
+}
+
+Default:
+
+1. Status code nahi mila to `500`.
+2. Message nahi mila to `"Internal Server Error"`.
+
+
+8. User model
+-------------
+
+File: `Backend/src/models/user.model.js`
+
+Mongoose model name: `UserInfo`
+
+Fields:
+
+1. `username` - String, required, unique, trim
+2. `email` - String, required, unique, trim
+3. `password` - String, required, trim, minLength 6
+4. `bio` - optional String
+5. `profileImage` - String with default user image URL
+6. timestamps - `createdAt`, `updatedAt`
+
+Important model logic:
+
+1. `userSchema.pre("save", function () {...})`
+   - User save hone se pehle password hash karta hai.
+   - Agar password modified nahi hai to hashing skip hoti hai.
+   - bcrypt sync hashing use ho raha hai: `bcrypt.hashSync(password, 10)`.
+
+2. `userSchema.methods.comparePassword`
+   - Login time plain password ko hashed password se compare karta hai.
+   - `bcrypt.compareSync(password, this.password)` use hota hai.
+
+
+9. Authentication feature
+-------------------------
+
+Auth ka code 3 layers me divided hai:
+
+1. Route
+2. Controller
+3. Service
+
+Current pattern:
+
+Route decides endpoint -> Controller handles req/res -> Service handles business logic/database -> Controller sends response.
+
+
+9.1 Auth routes
+
+File: `Backend/src/routes/auth.route.js`
+
+Base path in app.js: `/api/auth`
+
+Routes:
+
+1. `POST /api/auth/register`
+   - Controller: `UserRegister`
+   - Access: Public
+
+2. `POST /api/auth/login`
+   - Controller: `UserLogin`
+   - Access: Public
+
+
+9.2 Register step by step
+
+Endpoint: `POST /api/auth/register`
+
+Request body:
+
+{
+  "email": "test@example.com",
+  "password": "123456",
+  "username": "testuser",
+  "bio": "optional bio",
+  "profileImage": "optional image url"
+}
+
+Flow:
+
+1. Request `/api/auth/register` par aati hai.
+2. `auth.route.js` request ko `UserRegister` controller me bhejta hai.
+3. `UserRegister` controller `registerService(req.body)` call karta hai.
+4. `registerService` body se `email`, `password`, `username`, `bio`, `profileImage` leta hai.
+5. Validation:
+   - email missing hai to error
+   - password missing hai to error
+   - username missing hai to error
+   - password length 6 se kam hai to error
+   - username length 3 se kam hai to error
+6. Existing user check:
+   - `userModel.findOne({ $or: [{ email }, { username }] })`
+   - Same email ya username already hai to `409` error.
+7. New user create:
+   - `userModel.create({ email, password, username, bio, profileImage })`
+8. User save hone se pehle user model ka pre-save hook password hash karta hai.
+9. User create hone ke baad `generateToken(NewUser._id)` JWT banata hai.
+10. Service controller ko `{ NewUser, JWT_Token }` return karta hai.
+11. Controller cookie set karta hai:
+   - Cookie name: `jwt_token`
+   - Cookie value: JWT
+   - `httpOnly: true`
+12. Controller user ka safe data response me bhejta hai.
+13. Password response me nahi bheja jata.
+
+Success response:
+
+{
+  "success": true,
+  "message": "User Register Successfully",
+  "data": {
+    "_id": "...",
+    "email": "...",
+    "username": "...",
+    "bio": "...",
+    "profileImage": "...",
+    "createdAt": "...",
+    "updatedAt": "..."
+  }
+}
+
+
+9.3 Login step by step
+
+Endpoint: `POST /api/auth/login`
+
+Request body with email:
+
+{
+  "email": "test@example.com",
+  "password": "123456"
+}
+
+Request body with username:
+
+{
+  "username": "testuser",
+  "password": "123456"
+}
+
+Flow:
+
+1. Request `/api/auth/login` par aati hai.
+2. `auth.route.js` request ko `UserLogin` controller me bhejta hai.
+3. `UserLogin` controller `loginService(req.body)` call karta hai.
+4. `loginService` body se `email`, `username`, `password` leta hai.
+5. Validation:
+   - password missing hai to `400`
+   - password length 6 se kam hai to `400`
+6. User find hota hai:
+   - username ya email dono me se kisi ek se login possible hai.
+   - Query: `$or: [{ username }, { email }]`
+7. User nahi mila to `404 User not found`.
+8. Password compare:
+   - `isExistedUser.comparePassword(password)`
+   - Yeh model method bcrypt compare karta hai.
+9. Password galat hai to `401 Invalid Password`.
+10. Password sahi hai to JWT generate hota hai.
+11. Controller cookie set karta hai:
+   - Cookie name: `jwt_token`
+   - `httpOnly: true`
+12. Safe user data response me return hota hai.
+
+
+9.4 Auth middleware
+
+File: `Backend/src/middlewares/auth.middleware.js`
+
+Purpose: protected routes par sirf logged-in user ko access dena.
+
+Flow:
+
+1. Cookie se token read hota hai: `req.cookies.jwt_token`
+2. Token missing hai to `401 Unauthorized`
+3. Token verify hota hai: `Verify_Token(token)`
+4. Token invalid/expired hai to `401 User not authorized`
+5. Decoded token se user id milti hai: `decode.id`
+6. DB me user find hota hai: `userModel.findById(decode.id)`
+7. User nahi mila to `401 Unauthorized`
+8. User mil gaya to `req.user = User`
+9. `next()` call hota hai, then actual protected controller run hota hai.
+
+Important:
+
+Post routes me controller directly `req.user` use karta hai, so auth middleware pehle run hona zaroori hai.
+
+
+10. Post model
+--------------
+
+File: `Backend/src/models/post.model.js`
+
+Mongoose model name: `userPosts`
+
+Fields:
+
+1. `caption` - String, default empty string
+2. `imageUrl` - Array of image objects:
+   - `url` required
+   - `fieldId` required
+3. `user` - ObjectId, required, post owner user id
+4. timestamps - `createdAt`, `updatedAt`
+
+Important note:
+
+Current post schema has `ref: "UserInfos"`, but user model name is `UserInfo`. If populate use karna ho future me, ref should likely be `"UserInfo"`.
+
+
+11. ImageKit config
+-------------------
+
+File: `Backend/src/config/imagekit.js`
+
+Purpose: image files ko ImageKit par upload karna.
+
+Config env values:
+
+1. `IMAGEKIT_URL_ENDPOINTS`
+2. `IMAGEKIT_PUBLIC_SECRET`
+3. `IMAGEKIT_PRIVATE_SECRET`
+
+Function: `sendFile(file, fileName, folderName)`
+
+Flow:
+
+1. `file` multer se buffer ke form me aata hai.
+2. `fileName` original file name hota hai.
+3. `folderName` se ImageKit folder decide hota hai.
+4. Final folder: `Instagram/posts`
+5. `StorageInstance.upload(option)` file upload karta hai.
+6. ImageKit response return hota hai.
+
+
+12. Post routes
+---------------
+
+File: `Backend/src/routes/post.route.js`
+
+Base path in app.js: `/api/post`
+
+All post routes protected hain.
+
+Routes:
+
+1. `POST /api/post/`
+   - Middleware chain: `authMiddleware` -> `Upload.single("imageUrl")` -> `PostController`
+   - Purpose: post create karna.
+
+2. `GET /api/post/all-posts`
+   - Middleware chain: `authMiddleware` -> `getAllPost`
+   - Purpose: logged-in user ke posts fetch karna.
+
+3. `GET /api/post/detail/:id`
+   - Middleware chain: `authMiddleware` -> `postDetails`
+   - Purpose: logged-in user ke specific post ka detail fetch karna.
+
+Note:
+
+`post.route.js` me `ApiResponse` import hai but use nahi ho raha. Future cleanup me remove kar sakte ho.
+
+
+13. Create post step by step
+----------------------------
+
+Endpoint: `POST /api/post/`
+
+Access: authenticated user only.
+
+Request type: `multipart/form-data`
+
+Fields:
+
+1. `imageUrl` - file field name must be exactly `imageUrl`.
+2. `caption` - optional text field.
+
+Flow:
+
+1. Client request send karta hai with cookie `jwt_token`.
+2. Route par sabse pehle `authMiddleware` run hota hai.
+3. Auth middleware token verify karke `req.user` set karta hai.
+4. Next `Upload.single("imageUrl")` run hota hai.
+5. Multer image ko disk par save nahi karta; memory me buffer banata hai.
+6. Controller `PostController` run hota hai.
+7. Controller data leta hai:
+   - `const User = req.user`
+   - `const file = req.file`
+   - `const { caption } = req.body`
+8. File missing hai to `400 Image is required`
+9. File present hai to ImageKit upload:
+   - `sendFile(file.buffer, file.originalname, "posts")`
+10. ImageKit upload fail hua to `500 Image Upload Failed`
+11. Upload success hua to MongoDB me post create:
+   - `user: User._id`
+   - `caption`
+   - `imageUrl: { url: data.url, fieldId: data.fileId }`
+12. Response message: `Post Created SuccessFully`
+
+
+14. Get all posts step by step
+------------------------------
+
+Endpoint: `GET /api/post/all-posts`
+
+Access: authenticated user only.
+
+Flow:
+
+1. Client cookie ke sath request bhejta hai.
+2. `authMiddleware` token verify karta hai.
+3. `req.user` me logged-in user set hota hai.
+4. `getAllPost` controller run hota hai.
+5. Controller query chalata hai: `postModel.find({ user: user._id })`
+6. Current behavior:
+   - Yeh sirf logged-in user ke posts fetch karta hai.
+   - Global feed nahi hai.
+7. Response message: `Posts Fetched Successfully`
+
+Important note:
+
+`find()` empty array return karta hai agar posts nahi mile. Empty array truthy hota hai, so `if (!allPosts)` normally trigger nahi hoga. Agar "no posts" handle karna ho future me, `allPosts.length === 0` check kar sakte ho.
+
+
+15. Get single post detail step by step
+---------------------------------------
+
+Endpoint: `GET /api/post/detail/:id`
+
+Example: `GET /api/post/detail/65abc...`
+
+Access: authenticated user only.
+
+Flow:
+
+1. Client cookie ke sath request bhejta hai.
+2. `authMiddleware` token verify karta hai.
+3. `req.user` set hota hai.
+4. Controller `postDetails` run hota hai.
+5. URL params se post id leta hai: `req.params.id`
+6. Post id missing hai to `404 post not found`
+7. DB me post find hota hai: `postModel.findById(postId)`
+8. Post nahi mila to `404 Post not found`
+9. Ownership check hota hai: `data.user.equals(req.user._id)`
+10. Agar logged-in user post owner nahi hai to `403 forbidden access`
+11. Owner valid hai to post data return hota hai.
+
+Why ownership check?
+
+Abhi single post detail route private hai. User sirf apna post detail dekh sakta hai. Instagram style public post detail banana ho to ownership check ko change karna padega.
+
+
+16. Follow model / edge collection
+----------------------------------
+
+File: `Backend/src/models/follow.model.js`
+
+Purpose: followers/following relation ko separate collection me store karna.
+
+Why separate collection?
+
+Instagram type app me kisi user ke millions followers ho sakte hain. Agar followers array user document ke andar rakhenge to:
+
+1. MongoDB document bahut bada ho sakta hai.
+2. 16MB document limit issue aa sakta hai.
+3. Popular user ko follow/unfollow karte time same document baar-baar update hoga.
+4. Scaling hard hogi.
+
+Better approach:
+
+Users are nodes. Follow documents are edges.
+
+Example:
+
+User A follows User B:
+
+{
+  "follower": "UserAId",
+  "followed": "UserBId"
+}
+
+Current schema:
+
+1. `follower` - ref to `UserInfo`, who is following
+2. `followed` - ref to `UserInfo`, whom they follow
+3. timestamps
+
+Important note:
+
+Current schema shape is:
+
+follower: {
+  user: mongoose.Schema.Types.ObjectId,
+  ref: "UserInfo",
+  required: [...]
+}
+
+For Mongoose refs, a cleaner future shape would be:
+
+follower: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "UserInfo",
+  required: true
+}
+
+followed: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "UserInfo",
+  required: true
+}
+
+Also add unique index later:
+
+followSchema.index({ follower: 1, followed: 1 }, { unique: true })
+
+This prevents same user following same target multiple times.
+
+
+17. How to build this project from scratch
+------------------------------------------
+
+Beginner-friendly build order:
+
+Step 1: Backend folder create karo
+
+1. `Backend` folder banao.
+2. `npm init -y`
+3. Dependencies install:
+   - express
+   - mongoose
+   - dotenv
+   - bcrypt
+   - jsonwebtoken
+   - cookie-parser
+   - multer
+   - imagekit
+
+Step 2: Server entry create karo
+
+1. `server.js` banao.
+2. dotenv load karo.
+3. app import karo.
+4. database connect karo.
+5. app listen karo.
+
+Step 3: Express app setup karo
+
+1. `src/app.js` banao.
+2. `express.json()` add karo.
+3. `cookie-parser` add karo.
+4. `express.urlencoded()` add karo.
+5. Routes mount karo.
+6. Last me error middleware add karo.
+
+Step 4: Database config banao
+
+1. `src/config/database.js` banao.
+2. `mongoose.connect(process.env.MONGO_URL)` use karo.
+3. `.env` me `MONGO_URL` add karo.
+
+Step 5: Common utils banao
+
+1. `ApiError`
+2. `ApiResponse`
+3. `asyncHandler`
+4. `token.js`
+
+Step 6: User model banao
+
+1. username, email, password fields add karo.
+2. bio and profileImage optional/default add karo.
+3. timestamps true karo.
+4. pre-save hook me password hash karo.
+5. comparePassword method banao.
+
+Step 7: Auth service banao
+
+1. `registerService`
+   - validate fields
+   - duplicate user check
+   - user create
+   - JWT generate
+
+2. `loginService`
+   - password validate
+   - email/username se user find
+   - password compare
+   - JWT generate
+
+Step 8: Auth controller banao
+
+1. `UserRegister`
+   - service call
+   - cookie set
+   - safe user data response
+
+2. `UserLogin`
+   - service call
+   - cookie set
+   - safe user data response
+
+Step 9: Auth routes banao
+
+1. `POST /register`
+2. `POST /login`
+3. app.js me mount: `/api/auth`
+
+Step 10: Auth middleware banao
+
+1. Cookie se `jwt_token` read karo.
+2. Token missing/invalid to error.
+3. Token verify karo.
+4. DB se user find karo.
+5. `req.user = User`
+6. `next()`
+
+Step 11: ImageKit config banao
+
+1. ImageKit env values add karo.
+2. `sendFile(file, fileName, folderName)` function banao.
+3. Upload response return karo.
+
+Step 12: Post model banao
+
+1. caption
+2. imageUrl array
+3. user ObjectId
+4. timestamps
+
+Step 13: Post controller banao
+
+1. Create post:
+   - req.user lo
+   - req.file lo
+   - file required validate karo
+   - ImageKit upload karo
+   - DB me post create karo
+
+2. Get all posts:
+   - req.user ke id se posts find karo
+
+3. Post details:
+   - params id se post find karo
+   - owner check karo
+   - response bhejo
+
+Step 14: Post routes banao
+
+1. multer memory storage setup karo.
+2. All post routes me auth middleware lagao.
+3. Create route me `Upload.single("imageUrl")` lagao.
+4. app.js me mount: `/api/post`
+
+Step 15: Follow system next build karo
+
+1. Follow model ko clean shape me finalize karo.
+2. Unique index add karo.
+3. Follow route: `POST /api/user/follow/:id`
+4. Unfollow route: `DELETE /api/user/unfollow/:id`
+5. Followers list: `GET /api/user/:id/followers`
+6. Following list: `GET /api/user/:id/following`
+
+Step 16: Feed feature build karo
+
+Possible feed approaches:
+
+1. Simple feed:
+   - all posts latest first
+
+2. Following feed:
+   - logged-in user kis-kis ko follow karta hai
+   - un users ke posts fetch karo
+
+Step 17: Like/save features build karo
+
+Recommended approach:
+
+1. Like ko separate collection bana sakte ho:
+   - user
+   - post
+   - timestamps
+   - unique index `{ user: 1, post: 1 }`
+
+2. Save ko separate collection bana sakte ho:
+   - user
+   - post
+   - timestamps
+   - unique index `{ user: 1, post: 1 }`
+
+Is approach se large scale par post document ke andar huge arrays nahi banenge.
+
+
+18. Current API list
+--------------------
+
+Auth:
+
+1. `POST /api/auth/register`
+   - Public
+   - Body: email, password, username, bio, profileImage
+   - Sets cookie: `jwt_token`
+
+2. `POST /api/auth/login`
+   - Public
+   - Body: email or username, password
+   - Sets cookie: `jwt_token`
+
+Post:
+
+1. `POST /api/post/`
+   - Protected
+   - multipart/form-data
+   - file field: `imageUrl`
+   - body field: `caption`
+
+2. `GET /api/post/all-posts`
+   - Protected
+   - Fetches only logged-in user's posts
+
+3. `GET /api/post/detail/:id`
+   - Protected
+   - Fetches one post only if logged-in user owns it
+
+
+19. Testing manually in Postman/Thunder Client
+----------------------------------------------
+
+Register:
+
+1. Method: POST
+2. URL: `http://localhost:5000/api/auth/register`
+3. Body JSON:
+
+{
+  "email": "test@example.com",
+  "password": "123456",
+  "username": "testuser",
+  "bio": "hello"
+}
+
+Login:
+
+1. Method: POST
+2. URL: `http://localhost:5000/api/auth/login`
+3. Body JSON:
+
+{
+  "email": "test@example.com",
+  "password": "123456"
+}
+
+Create post:
+
+1. Login/register first so cookie set ho jaye.
+2. Method: POST
+3. URL: `http://localhost:5000/api/post/`
+4. Body: form-data
+5. Fields:
+   - `imageUrl` as File
+   - `caption` as Text
+
+Get my posts:
+
+1. Method: GET
+2. URL: `http://localhost:5000/api/post/all-posts`
+3. Cookie required.
+
+Get post detail:
+
+1. Method: GET
+2. URL: `http://localhost:5000/api/post/detail/<postId>`
+3. Cookie required.
+4. User must be owner of post.
+
+
+20. Important cleanup/fix notes
+-------------------------------
+
+These are not blockers for understanding, but useful future improvements:
+
+1. `README.md` is older than current code. It mentions only basic backend setup, while auth/post features now exist.
+2. `post.model.js` has `ref: "UserInfos"`; user model is `UserInfo`.
+3. `follow.model.js` can use cleaner Mongoose ref shape with `type/ref/required`.
+4. `post.route.js` has unused `ApiResponse` import.
+5. `post.controller.js` has debug `console.log` statements that can be removed later.
+6. Logout route is not implemented yet.
+7. Cookie security can improve later with `secure`, `sameSite`, and `maxAge`.
+8. Tests are not setup yet.
+
+
+21. Mental model of the project
+-------------------------------
+
+Request ka general flow:
+
+Client request
+  -> app.js middleware
+  -> route file
+  -> auth middleware if protected
+  -> controller
+  -> service if business logic is separated
+  -> model/database
+  -> ApiResponse success
+
+Error flow:
+
+Any error
+  -> ApiError throw
+  -> asyncHandler catch
+  -> errorMiddleware
+  -> JSON error response
+
+Auth flow:
+
+Register/login
+  -> user validate
+  -> password hash/compare
+  -> JWT generate
+  -> cookie set
+  -> protected routes can use cookie token
+
+Post flow:
+
+Logged-in user
+  -> authMiddleware sets req.user
+  -> multer reads image file
+  -> ImageKit uploads file
+  -> MongoDB stores post data
+  -> response returns created/fetched post
+
+
+22. Best next feature order
+---------------------------
+
+Recommended next build order:
+
+1. Clean small issues:
+   - post model ref fix
+   - remove unused imports/logs
+   - update README
+
+2. Logout:
+   - `POST /api/auth/logout`
+   - clear `jwt_token` cookie
+
+3. Follow/unfollow:
+   - fix follow model
+   - add follow controller
+   - add follow routes
+   - add unique index
+
+4. Feed:
+   - first simple all-post feed
+   - then following-based feed
+
+5. Like system:
+   - create like model
+   - like/unlike route
+   - like count
+
+6. Save post:
+   - create saved-post model
+   - save/unsave route
+   - saved posts list
+
+7. Frontend:
+   - auth pages
+   - feed page
+   - create post
+   - profile page
 
