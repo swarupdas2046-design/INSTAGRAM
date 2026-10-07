@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { getAllPost, PostController, postDetails } from "../controllers/post.controller.js";
+import { getAllPost, likePostController, PostController, postDetails } from "../controllers/post.controller.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import ApiResponse from "../utils/apiResponse.js";
 const Upload = multer({ storage: multer.memoryStorage() });
@@ -20,6 +20,19 @@ postRouter.post("/", authMiddleware,Upload.single("imageUrl"),PostController);
 
 postRouter.get("/all-posts",authMiddleware,getAllPost)
 
+/**
+ * @route GET /api/post/detail/:id
+ * @access authenticated user only
+ * @description returns an detail of a specific post by id
+ */
+
 postRouter.get("/detail/:id",authMiddleware,postDetails)
+
+/**
+ * @route POST /api/post/like/:id
+ * @access authenticated user only
+ * @description like a post with the given id in the request params
+ */
+postRouter.post("/like/:id",authMiddleware,likePostController)
 
 export default postRouter;

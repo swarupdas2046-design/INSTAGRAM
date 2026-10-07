@@ -36,7 +36,7 @@ export const registerService = async ({email,password,username,bio,profileImage}
             profileImage
         })
 
-        const JWT_Token = generateToken(NewUser._id)
+        const JWT_Token = generateToken(NewUser._id,NewUser.username)
 
         return{
             NewUser,
@@ -76,7 +76,7 @@ export const loginService = async ({email,password,username})=>{
 
         if (!DecodePassword) throw new ApiError("Invalid Password",401)
 
-        const jwt_token = generateToken(isExistedUser._id)
+        const jwt_token = generateToken(isExistedUser._id,isExistedUser.username)
 
         return{
             jwt_token,

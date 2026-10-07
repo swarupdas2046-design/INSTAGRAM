@@ -1,4 +1,5 @@
 import sendFile from "../config/imagekit.js";
+import likeModel from "../models/like.model.js";
 import { postModel } from "../models/post.model.js";
 import ApiError from "../utils/apiError.js";
 import ApiResponse from "../utils/apiResponse.js";
@@ -63,3 +64,29 @@ export const postDetails = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse("Post Fetched Successfully", data));
 });
+
+
+export const likePostController = asyncHandler(async(req,res)=>{
+    const user = req.user.username
+    const postId = req.params.id
+
+    const post = await postModel.findById(postId)
+
+    if(!post) throw new ApiError("Post not found",404)
+
+    const isLiked = await likeModel.findOne({
+        post:postId,
+        user:user
+    })
+
+    if(isLiked) throw new ApiError("You have already liked this post",200)
+
+    const like = await likeModel.create({
+        post:postId,
+        user:user
+    })
+
+    return res.status(200).json(new ApiResponse("Post Liked Successfully",like))
+  
+  
+  })
