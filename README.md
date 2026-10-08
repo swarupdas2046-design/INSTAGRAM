@@ -1,6 +1,6 @@
 # Instagram Clone
 
-Day - 05/10/2026
+Day - 08/10/2026
 
 An Instagram-style social media clone built as a daily-progress learning project. The project is currently in progress and the backend foundation is being developed first.
 

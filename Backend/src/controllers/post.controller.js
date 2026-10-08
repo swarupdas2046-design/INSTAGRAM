@@ -1,27 +1,15 @@
-import sendFile from "../config/imagekit.js";
-import likeModel from "../models/like.model.js";
-import { postModel } from "../models/post.model.js";
-import ApiError from "../utils/apiError.js";
+import {
+  allPostService,
+  likePostService,
+  postDetailsService,
+  PostService,
+} from "../services/post.service.js";
 import ApiResponse from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 // ------------- Create Post Controller --------------
 export const PostController = asyncHandler(async (req, res) => {
-  const User = req.user;
-  const file = req.file;
-  const { caption } = req.body;
-
-  if (!file) throw new ApiError("Image is required", 400);
-
-  const data = await sendFile(file.buffer, file.originalname, "posts");
-
-  if (!data) throw new ApiError("Image Upload Failed", 500);
-
-  const post = await postModel.create({
-    user: User._id,
-    caption,
-    imageUrl: { url: data.url, fieldId: data.fileId },
-  });
+  const post = await PostService(req.user, req.file, req.body.caption);
 
   return res
     .status(200)
@@ -30,14 +18,8 @@ export const PostController = asyncHandler(async (req, res) => {
 
 // ------------- Get All Posts that are created by the user --------------
 export const getAllPost = asyncHandler(async (req, res) => {
-  const user = req.user;
-  console.log(user);
-
-  const allPosts = await postModel.find({ user: user._id });
-
-  if (!allPosts) throw new ApiError("Posts not found", 404);
-
-  console.log(allPosts);
+  const allPosts = await allPostService(req.user);
+  // const user = req.user;
 
   return res
     .status(200)
@@ -46,47 +28,15 @@ export const getAllPost = asyncHandler(async (req, res) => {
 
 // ------------- Get Single Post that is created by the user --------------
 export const postDetails = asyncHandler(async (req, res) => {
-  const postId = req.params.id;
-
-  if (!postId) throw new ApiError("post not found", 404);
-
-  const data = await postModel.findById(postId);
-
-  if (!data) throw new ApiError("Post not found", 404);
-
-  //-----------------check if the user is the owner of the post through equal method---------------------
-
-  const isValid = data.user.equals(req.user._id);
-
-  if (!isValid) throw new ApiError("forbidden access", 403);
+  const data = await postDetailsService(req.params.id, req.user);
 
   return res
     .status(200)
     .json(new ApiResponse("Post Fetched Successfully", data));
 });
 
+export const likePostController = asyncHandler(async (req, res) => {
+  const like = await likePostService(req.params.id, req.user.username);
 
-export const likePostController = asyncHandler(async(req,res)=>{
-    const user = req.user.username
-    const postId = req.params.id
-
-    const post = await postModel.findById(postId)
-
-    if(!post) throw new ApiError("Post not found",404)
-
-    const isLiked = await likeModel.findOne({
-        post:postId,
-        user:user
-    })
-
-    if(isLiked) throw new ApiError("You have already liked this post",200)
-
-    const like = await likeModel.create({
-        post:postId,
-        user:user
-    })
-
-    return res.status(200).json(new ApiResponse("Post Liked Successfully",like))
-  
-  
-  })
+  return res.status(200).json(new ApiResponse("Post Liked Successfully", like));
+});

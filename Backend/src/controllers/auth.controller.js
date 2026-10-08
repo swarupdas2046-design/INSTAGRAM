@@ -2,6 +2,10 @@ import { loginService, registerService } from '../services/user.service.js'
 import ApiResponse from '../utils/apiResponse.js'
 import asyncHandler from '../utils/asyncHandler.js'
 
+/**
+ *- User Data
+ *- user ka safe data return karta hai.
+ */
 const userData = (user)=>{
     return{
         _id:user._id,
@@ -15,12 +19,12 @@ const userData = (user)=>{
 }
 
 /**
- * Register Controller
- * api -> http://localhost:3000/api/auth/register
- * method -> POST
- * req.body -> email,password,username,bio,profileImage
- * res-> {success:true,message:"User Register Successfully",data:{_id,email,username,bio,profileImage,createdAt,updatedAt}}
- * access -> Public
+ *- Register Controller
+ *- api -> http://localhost:3000/api/auth/register
+ *- method -> POST
+ *- req.body -> email,password,username,bio,profileImage
+ *- res-> {success:true,message:"User Register Successfully",data:{_id,email,username,bio,profileImage,createdAt,updatedAt}}
+ *- access -> Public
  */
 
 export const UserRegister = asyncHandler(async(req,res)=>{
@@ -37,12 +41,12 @@ export const UserRegister = asyncHandler(async(req,res)=>{
 )
 
 /**
- * Login Controller
- * api -> http://localhost:3000/api/auth/login
- * method -> POST
- * req.body -> email,password,username
- * res-> {success:true,message:"Login Successfully",data:{_id,email,username,bio,profileImage,createdAt,updatedAt}}
- * access -> Public
+ *- Login Controller
+ *- api -> http://localhost:3000/api/auth/login
+ *- method -> POST
+ *- req.body -> email,password,username
+ *- res-> {success:true,message:"Login Successfully",data:{_id,email,username,bio,profileImage,createdAt,updatedAt}}
+ *- access -> Public
  */
 
 
