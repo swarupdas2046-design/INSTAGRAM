@@ -18,10 +18,14 @@ export const followUserService = async (followerName, followeeName) => {
 // ------------ check if the user is already following the user ------------
     const isAllreadyFollow = await followModel.findOne({
         followee:followeeName,
-        follower:followerName
+        follower:followerName,
     })
 
-    if(isAllreadyFollow) throw new ApiError("You are already following this user",200)
+    if(isAllreadyFollow){
+        if(isAllreadyFollow.status === "pending") throw new ApiError("You have already sent a follow request",200)
+
+        if(isAllreadyFollow.status === "accepted") throw new ApiError("You are already following this user",200)
+    }
 
 // ------------ follow the user ------------
     const followData = await followModel.create({
@@ -42,7 +46,8 @@ export const unfollowUserService = async (user, unfollowUser) => {
 
     const isFollowed = await followModel.findOne({
         followee:unfollowUser,
-        follower:user
+        follower:user,
+        status:"accepted"
     })
 
     if(!isFollowed) throw new ApiError("You are not following this user",200)
@@ -51,3 +56,4 @@ export const unfollowUserService = async (user, unfollowUser) => {
 
     return unfollowUser
 }
+

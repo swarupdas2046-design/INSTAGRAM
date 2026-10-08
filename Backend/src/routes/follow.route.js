@@ -1,5 +1,5 @@
 import express from 'express'
-import { followUserController, unfollowUserController } from '../controllers/follow.controller.js'
+import { acceptController, followRequestController, followUserController, rejectController, unfollowUserController } from '../controllers/follow.controller.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
 
 /**
@@ -26,5 +26,13 @@ followRouter.post("/follow/:username",authMiddleware,followUserController)
  * @description unfollow the user with the given username
  */
 followRouter.post("/unfollow/:username",authMiddleware,unfollowUserController)
+
+
+followRouter.get("/follow/follow-requests",authMiddleware,followRequestController)
+
+followRouter.post("/follow/accept-request/:username",authMiddleware,acceptController)
+
+followRouter.post("/follow/reject-request/:username",authMiddleware,rejectController)
+
 
 export default followRouter
