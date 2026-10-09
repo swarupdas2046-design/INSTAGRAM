@@ -1,27 +1,57 @@
 import { useNavigate } from "react-router";
-import {useForm} from 'react-hook-form'
-import axios from 'axios'
+import { useForm } from "react-hook-form";
+import axios from "axios";
+import { Flip, toast, Zoom } from "react-toastify";
+import { useAuth } from "../hooks/userAuth";
 const Register = () => {
-    const navigate = useNavigate()
-    const {handleSubmit,register,reset,formState:{errors}} = useForm({
-        mode:"onChange"
-    })
-const FormSubmit = async(data)=>{
+  const navigate = useNavigate();
+  const {loading,userRegister} = useAuth();
+  const {
+    handleSubmit,
+    register,
+    reset,
+    formState: { errors },
+  } = useForm({
+    mode: "onChange",
+  });
+  const FormSubmit = async (data) => {
+  
+    const { username, email, password } = data;
+
     try {
-    const {username,email,password} = data
+      const response = await userRegister(username, email, password);
 
-        const response = await axios.post(`http://localhost:3000/api/auth/register`,{email,password,username},{
-            withCredentials:true
-        })
+      toast.success("Registration successful", {
+        transition: Zoom,
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
 
-        console.log("response from Server:----->",response);
-    reset()
-    } catch (error) {
-    console.log("Status:", error.response?.status);
-    console.log("Message:", error.response?.data);
+      console.log(response);
+      
+      navigate("/app");
+
+    reset();
+  } catch (error) {
+      toast.error(error.response.data.message, {
+        transition: Flip,
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
     }
-}
-
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 font-sans relative overflow-hidden text-zinc-300">
@@ -47,13 +77,18 @@ const FormSubmit = async(data)=>{
             <label htmlFor="name" className="text-sm font-medium text-zinc-400">
               Full Name
             </label>
-            <input {...register("username",{required:"Name is Required"})}
+            <input
+              {...register("username", { required: "Name is Required" })}
               type="text"
               id="name"
               placeholder="e.g. Swarup Das"
               className="w-full bg-[#1a1a1a] border border-zinc-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-600"
             />
-            {errors.name && <p className="text-xs italic font-medium text-red-500">{errors.name?.message}</p>}
+            {errors.name && (
+              <p className="text-xs italic font-medium text-red-500">
+                {errors.name?.message}
+              </p>
+            )}
           </div>
 
           {/* Email Input */}
@@ -64,13 +99,18 @@ const FormSubmit = async(data)=>{
             >
               Email address
             </label>
-            <input {...register("email",{required:"Email is Required"})}
+            <input
+              {...register("email", { required: "Email is Required" })}
               type="email"
               id="email"
               placeholder="name@example.com"
               className="w-full bg-[#1a1a1a] border border-zinc-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-600"
             />
-            {errors.email && <p className="text-xs italic font-medium text-red-500">{errors.email?.message}</p>}
+            {errors.email && (
+              <p className="text-xs italic font-medium text-red-500">
+                {errors.email?.message}
+              </p>
+            )}
           </div>
 
           {/* Password Input */}
@@ -81,19 +121,24 @@ const FormSubmit = async(data)=>{
             >
               Password
             </label>
-            <input {...register("password",{
-                required:"Password is Required",
-                minLength:{
-                    value:6,
-                    message:"Password must be at least 6 characters"
-                }
-            })}
+            <input
+              {...register("password", {
+                required: "Password is Required",
+                minLength: {
+                  value: 6,
+                  message: "Password must be at least 6 characters",
+                },
+              })}
               type="password"
               id="password"
               placeholder="Create a strong password"
               className="w-full bg-[#1a1a1a] border border-zinc-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-600"
             />
-            {errors.password && <p className="text-xs italic font-medium text-red-500">{errors.password?.message}</p>}
+            {errors.password && (
+              <p className="text-xs italic font-medium text-red-500">
+                {errors.password?.message}
+              </p>
+            )}
           </div>
 
           {/* Terms & Conditions Checkbox */}
@@ -168,9 +213,9 @@ const FormSubmit = async(data)=>{
         {/* Footer */}
         <p className="text-center text-sm text-zinc-500 mt-8">
           Already have an account?{" "}
-          <span 
-            onClick={()=>{
-                navigate("/")
+          <span
+            onClick={() => {
+              navigate("/");
             }}
             className="font-semibold text-white hover:text-emerald-400 transition-colors"
           >
