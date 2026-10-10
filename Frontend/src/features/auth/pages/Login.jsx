@@ -5,28 +5,36 @@ import axios from "axios";
 import { useAuth } from "../hooks/userAuth";
 
 const Login = () => {
-    const navigate = useNavigate()
-    const {loading,userLogin} = useAuth()
-    const {handleSubmit,register,reset,formState:{errors}} = useForm({
-        mode:"onChange"
-    })
-const FormSubmit = async(data)=>{
+  const navigate = useNavigate();
+  const { loading, userLogin } = useAuth();
+  const {
+    handleSubmit,
+    register,
+    reset,
+    formState: { errors },
+  } = useForm({
+    mode: "onChange",
+  });
+  const FormSubmit = async (data) => {
     try {
-    const {email,password} = data
+      const { email, password } = data;
 
-    const response = await userLogin(email,password)
+      const response = await userLogin(email, password);
 
-        console.log("response from Server:----->",response);
-      navigate("/app")
-        reset()
+      console.log("response from Server:----->", response);
+      if(!response){
+        return navigate("/register")
+      }
+      navigate("/app");
+      reset();
     } catch (error) {
-    console.log("Status:", error.response?.status);
-    console.log("Message:", error.response?.data);
+      console.log("Status:", error.response?.status);
+      console.log("Message:", error.response?.data);
     }
-}
+  };
 
   if (loading) {
-    return <h1>Loading....</h1>
+    return <h1>Loading....</h1>;
   }
 
   return (
@@ -60,13 +68,18 @@ const FormSubmit = async(data)=>{
             >
               Email address
             </label>
-            <input {...register("email",{required:"Email is required"})}
+            <input
+              {...register("email", { required: "Email is required" })}
               type="email"
               id="email"
               placeholder="swarup@example.com"
               className="w-full bg-[#1a1a1a] border border-zinc-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-600"
             />
-            {errors.email && <span className="text-red-500 italic font-medium text-xs">{errors.email.message}</span>}
+            {errors.email && (
+              <span className="text-red-500 italic font-medium text-xs">
+                {errors.email.message}
+              </span>
+            )}
           </div>
 
           {/* Password Input */}
@@ -85,19 +98,24 @@ const FormSubmit = async(data)=>{
                 Forgot password?
               </a>
             </div>
-            <input {...register("password",{
-                required:"Password is required",
-                minLength:{
-                    value:6,
-                    message:"Password must be at least 6 characters"
-                }
-            })}
+            <input
+              {...register("password", {
+                required: "Password is required",
+                minLength: {
+                  value: 6,
+                  message: "Password must be at least 6 characters",
+                },
+              })}
               type="password"
               id="password"
               placeholder="••••••••"
               className="w-full bg-[#1a1a1a] border border-zinc-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-600"
             />
-            {errors.password && <span className="text-red-500 italic font-medium text-xs">{errors.password.message}</span>}
+            {errors.password && (
+              <span className="text-red-500 italic font-medium text-xs">
+                {errors.password.message}
+              </span>
+            )}
           </div>
 
           {/* Remember Me */}
@@ -157,7 +175,9 @@ const FormSubmit = async(data)=>{
         <p className="text-center text-sm text-zinc-500 mt-8">
           Don't have an account?{" "}
           <span
-            onClick={()=>{navigate("/register")}}
+            onClick={() => {
+              navigate("/register");
+            }}
             className="font-semibold text-white hover:text-emerald-400 transition-colors"
           >
             Sign up

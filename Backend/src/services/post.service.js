@@ -3,17 +3,29 @@ import likeModel from "../models/like.model.js";
 import { postModel } from "../models/post.model.js";
 import ApiError from "../utils/apiError.js";
 
-export const PostService = async (User, file, caption) => {
-  if (!file) throw new ApiError("Image is required", 400);
+export const PostService = async (User, files, caption) => {
+  if (!files) throw new ApiError("Image is required", 400);
 
-  const data = await sendFile(file.buffer, file.originalname, "posts");
+  const data = await Promise.all(files.map((elem)=>{
+    const response = sendFile(elem.buffer, elem.originalname, "posts")
+    return response
+  }))
 
   if (!data) throw new ApiError("Image Upload Failed", 500);
+
+  const urlData = data.map((elem)=>{
+    return {
+      url:elem.url,
+      fileId:elem.fileId,
+    }
+  })
+  
+  // return urlData { url: data.url, fieldId: data.fileId }
 
   const post = await postModel.create({
     user: User._id,
     caption,
-    imageUrl: { url: data.url, fieldId: data.fileId },
+    imageUrl: urlData ,
   });
 
   return post;

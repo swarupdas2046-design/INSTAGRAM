@@ -67,7 +67,7 @@ export const loginService = async ({email,password,username})=>{
                 {username:username},
                 {email:email}
             ]
-        })
+        }).select("+password")
 
         if (!isExistedUser) throw new ApiError("User not found",404)
 

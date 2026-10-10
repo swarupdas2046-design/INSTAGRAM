@@ -1,6 +1,6 @@
 import React, { createContext, useState } from 'react'
 import { loginApi, registerApi } from './auth/services/auth.api'
-import { Flip, toast } from 'react-toastify'
+import { Flip, toast, Zoom } from 'react-toastify'
 
 export const AuthContext = createContext()
 
@@ -20,9 +20,9 @@ const AuthProvider = ({children}) => {
             return response
         } catch (error) {
             console.log(error.response?.data)
-            toast.error(error.response?.data,{
+            toast.error(error.response?.data.message,{
                 theme:"dark",
-                transition:Flip
+                transition:Zoom
             })
         }
         finally{
@@ -43,9 +43,9 @@ const AuthProvider = ({children}) => {
             return response
         } catch (error) {
             console.log(error.response?.data)
-            toast.error(error.response?.data,{
+            toast.error(error.response?.data.message,{
                 theme:"dark",
-                transition:Flip
+                transition:Zoom
             })
         }
         finally{

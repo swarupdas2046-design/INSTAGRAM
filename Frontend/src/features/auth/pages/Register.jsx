@@ -16,13 +16,13 @@ const Register = () => {
   const FormSubmit = async (data) => {
     const { username, email, password } = data;
     const response = await userRegister(username, email, password);
-
+    if(!response) return
     console.log(response);
-    navigate("/app")
+    navigate("/app");
   };
 
   if (loading) {
-    return <h1>Loading....</h1>
+    return <h1>Loading....</h1>;
   }
 
   return (
