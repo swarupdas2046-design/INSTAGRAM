@@ -2,27 +2,33 @@ import React from "react";
 import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import axios from "axios";
+import { useAuth } from "../hooks/userAuth";
 
 const Login = () => {
     const navigate = useNavigate()
+    const {loading,userLogin} = useAuth()
     const {handleSubmit,register,reset,formState:{errors}} = useForm({
         mode:"onChange"
     })
 const FormSubmit = async(data)=>{
     try {
-    // const {email,password} = data
+    const {email,password} = data
 
-        const response = await axios.post(`http://localhost:3000/api/auth/login`,data,{
-            withCredentials:true
-       })
+    const response = await userLogin(email,password)
 
         console.log("response from Server:----->",response);
-    reset()
+      navigate("/app")
+        reset()
     } catch (error) {
     console.log("Status:", error.response?.status);
     console.log("Message:", error.response?.data);
     }
 }
+
+  if (loading) {
+    return <h1>Loading....</h1>
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 font-sans relative overflow-hidden text-zinc-300">
       {/* Soft Ambient Background Glow */}

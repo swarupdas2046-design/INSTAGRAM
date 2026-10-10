@@ -1,11 +1,10 @@
 import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
-import axios from "axios";
 import { Flip, toast, Zoom } from "react-toastify";
 import { useAuth } from "../hooks/userAuth";
 const Register = () => {
   const navigate = useNavigate();
-  const {loading,userRegister} = useAuth();
+  const { loading, userRegister } = useAuth();
   const {
     handleSubmit,
     register,
@@ -15,43 +14,16 @@ const Register = () => {
     mode: "onChange",
   });
   const FormSubmit = async (data) => {
-  
     const { username, email, password } = data;
+    const response = await userRegister(username, email, password);
 
-    try {
-      const response = await userRegister(username, email, password);
-
-      toast.success("Registration successful", {
-        transition: Zoom,
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "dark",
-      });
-
-      console.log(response);
-      
-      navigate("/app");
-
-    reset();
-  } catch (error) {
-      toast.error(error.response.data.message, {
-        transition: Flip,
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "dark",
-      });
-    }
+    console.log(response);
+    navigate("/app")
   };
+
+  if (loading) {
+    return <h1>Loading....</h1>
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 font-sans relative overflow-hidden text-zinc-300">

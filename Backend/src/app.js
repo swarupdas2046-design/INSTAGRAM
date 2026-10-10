@@ -6,6 +6,11 @@ import errorMiddleware from './middlewares/error.middleware.js'
 import followRouter from './routes/follow.route.js'
 import cors from 'cors'
 const app = express()
+app.use((req, res, next) => {
+    console.log("METHOD:", req.method)
+    console.log("URL:", req.originalUrl)
+    next()
+})
 app.use(express.json())
 app.use(cookie())
 app.use(cors({
@@ -15,7 +20,7 @@ app.use(cors({
 
 app.use(express.urlencoded({extended:true}))
 
-
+console.log("Mounting auth routes...")
 // auth routes 
 app.use("/api/auth",authRouter)
 
