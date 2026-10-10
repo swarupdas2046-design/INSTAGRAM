@@ -61,7 +61,7 @@ npm install
 Create a `.env` file inside the `Backend` folder and add:
 
 ```env
-PORT=5000
+PORT=8000
 MONGO_URL=your_mongodb_connection_string
 ```
 
@@ -75,6 +75,18 @@ Or start normally:
 
 ```bash
 npm start
+```
+
+Backend API base URL:
+
+```text
+http://localhost:8000
+```
+
+Example login endpoint:
+
+```text
+POST http://localhost:8000/api/auth/login
 ```
 
 ## Upcoming Commits

@@ -20,7 +20,7 @@ const userData = (user)=>{
 
 /**
  *- Register Controller
- *- api -> http://localhost:3000/api/auth/register
+ *- api -> http://localhost:8000/api/auth/register
  *- method -> POST
  *- req.body -> email,password,username,bio,profileImage
  *- res-> {success:true,message:"User Register Successfully",data:{_id,email,username,bio,profileImage,createdAt,updatedAt}}
@@ -42,7 +42,7 @@ export const UserRegister = asyncHandler(async(req,res)=>{
 
 /**
  *- Login Controller
- *- api -> http://localhost:3000/api/auth/login
+ *- api -> http://localhost:8000/api/auth/login
  *- method -> POST
  *- req.body -> email,password,username
  *- res-> {success:true,message:"Login Successfully",data:{_id,email,username,bio,profileImage,createdAt,updatedAt}}

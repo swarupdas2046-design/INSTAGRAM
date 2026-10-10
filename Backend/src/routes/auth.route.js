@@ -4,8 +4,8 @@ import { getMeController, UserLogin, UserRegister } from '../controllers/auth.co
 
 /**
  * api's: [
- *      http://localhost:3000/api/auth/register
- *      http://localhost:3000/api/auth/login
+ *      http://localhost:8000/api/auth/register
+ *      http://localhost:8000/api/auth/login
  * ]
  */
 

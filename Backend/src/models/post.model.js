@@ -13,15 +13,15 @@ const postSchema = new mongoose.Schema({
                 required:[true,"Image URL is required for creating a post"]
             },
 
-            fieldId:{
+            fileId:{
                 type:String,
                 required:[true,"Field id is required for creating a post"]
             }
         }
     ],
     user:{
-        type:mongoose.Schema.ObjectId,
-        ref:"UserInfos",
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"UserInfo",
         required:[true,"User id is required for creating a post"]
     }
 },{

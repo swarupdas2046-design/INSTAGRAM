@@ -1,3 +1,4 @@
+import { postModel } from "../models/post.model.js";
 import {
   allPostService,
   likePostService,
@@ -9,7 +10,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 
 // ------------- Create Post Controller --------------
 export const PostController = asyncHandler(async (req, res) => {
-  const post = await PostService(req.user, req.file, req.body.caption);
+  const post = await PostService(req.user, req.files, req.body.caption);
 
   return res
     .status(200)
@@ -40,3 +41,12 @@ export const likePostController = asyncHandler(async (req, res) => {
 
   return res.status(200).json(new ApiResponse("Post Liked Successfully", like));
 });
+
+
+export const getFeesController = asyncHandler(async(req,res)=>{
+    const feed = await postModel.find().populate("user")
+
+    return res.status(200).json(new ApiResponse("Feed fetched SuccessFully",feed))
+
+
+})

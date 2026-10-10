@@ -4,8 +4,8 @@ import authMiddleware from '../middlewares/auth.middleware.js'
 
 /**
  * api's: [
- *      http://localhost:3000/api/user/follow/:username
- *      http://localhost:3000/api/user/unfollow/:username
+ *      http://localhost:8000/api/user/follow/:username
+ *      http://localhost:8000/api/user/unfollow/:username
  * ]
  * access -> Only Authenticated Users
  */
