@@ -1,3 +1,4 @@
+import likeModel from "../models/like.model.js";
 import { postModel } from "../models/post.model.js";
 import {
   allPostService,
@@ -42,11 +43,28 @@ export const likePostController = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse("Post Liked Successfully", like));
 });
 
+export const getFeesController = asyncHandler(async (req, res) => {
+  const user = req.user.username;
 
-export const getFeesController = asyncHandler(async(req,res)=>{
-    const feed = await postModel.find().populate("user")
+  console.log("From liked Controller:--->",user);
+  
 
-    return res.status(200).json(new ApiResponse("Feed fetched SuccessFully",feed))
+  const feed = await Promise.all(
+    (await postModel.find().populate("user").lean()).map(async (post) => { 
 
+      // find if the post is liked by the user
+      const isLiked = await likeModel.findOne({
+        user: user,
+        post: post,
+      });
 
-})
+      post.liked = Boolean(isLiked) // isLiked ? true : false , converted to boolean
+
+      return post;
+    }),
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse("Feed fetched SuccessFully", feed));
+});
