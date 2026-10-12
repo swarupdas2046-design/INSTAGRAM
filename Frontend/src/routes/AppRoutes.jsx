@@ -4,6 +4,9 @@ import Register from '../features/auth/pages/Register'
 import App from '../App'
 import Feed from '../features/post/pages/Feed'
 import CreatePost from '../features/post/pages/CreatePost'
+import Explore from '../features/post/pages/Explore'
+import Profile from '../features/post/pages/Profile'
+import Search from '../features/post/pages/Search'
 import MainLayout from '../layouts/MainLayout'
 import AuthLayout from '../layouts/AuthLayout'
 import ProtectedMainLayout from '../layouts/ProtectedMainLayout'
@@ -27,6 +30,18 @@ const router = createBrowserRouter([
                 {
                     path:"createPost",
                     element:<CreatePost/>
+                },
+                {
+                    path:"explore",
+                    element:<Explore/>
+                },
+                {
+                    path:"search",
+                    element:<Search/>
+                },
+                {
+                    path:"profile/:username",
+                    element:<Profile/>
                 }
                 ]
             }
