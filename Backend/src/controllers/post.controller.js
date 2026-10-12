@@ -50,7 +50,7 @@ export const getFeesController = asyncHandler(async (req, res) => {
   
 
   const feed = await Promise.all(
-    (await postModel.find().populate("user").lean()).map(async (post) => { 
+    (await postModel.find({}).sort({createdAt:-1}).populate("user").lean()).map(async (post) => { 
 
       // find if the post is liked by the user
       const isLiked = await likeModel.findOne({

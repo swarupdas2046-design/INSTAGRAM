@@ -1,7 +1,7 @@
-import { useContext } from "react"
+import { useContext, useEffect } from "react"
 import { PostContext } from "../PostContextProvider"
-import { getFeed } from "../services/postApi"
-
+import { getFeed, uploadPost } from "../services/postApi"
+import { toast, Zoom } from "react-toastify";
 export const UsePost = ()=>{
 
     const {loading, setLoading, post, setPost, feed, setFeed} = useContext(PostContext)
@@ -25,5 +25,34 @@ export const UsePost = ()=>{
         }
 
     }
-return {loading,feed,GetAllFeed,post}
+
+const handlePost = async (imageFiles, caption) => {
+    setLoading(true);
+    try {
+        const response = await uploadPost(imageFiles, caption);
+        setFeed((prev) => [response, ...prev]);
+        toast.success("Post shared successfully!", {
+        theme: "dark",
+        transition: Zoom,
+    });
+      return response; // 👈 Component ke liye return karna zaroori hai
+    } catch (error) {
+        console.log(error.response?.data);
+        toast.error(error.response?.data?.message || "Failed to create post", {
+        theme: "dark",
+        transition: Zoom,
+    });
+        return null;
+    }
+    finally {
+    setLoading(false);
+    }
+};
+
+useEffect(()=>{
+    GetAllFeed()
+},[])
+
+
+return {loading,feed,GetAllFeed,post,handlePost}
 }

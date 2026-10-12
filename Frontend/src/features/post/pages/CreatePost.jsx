@@ -1,49 +1,45 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
+import { UsePost } from "../hooks/UsePost";
 
 /**
  * ==============================================================================
- * 📸 CREATE POST COMPONENT - INSTAGRAM CLONE (PREMIUM MODAL DASHBOARD)
+ * 📸 CREATE POST COMPONENT - INSTAGRAM CLONE (CLEAN & MINIMAL EDITION)
  * ==============================================================================
- * 📌 FEATURES & FUNCTIONALITY:
- * 1. Exact UI Match: Dual-pane Desktop Dashboard & Fluid Mobile Layout.
- * 2. Media Upload & Preview Engine:
- *    - Drag & drop + file picker support for images.
- *    - Strict validation: MAXIMUM 5 images allowed.
- *    - Dynamic carousel preview with smooth slide transitions & navigation dots.
- *    - Ability to delete / remove specific images from the selection.
- * 3. Form Management (React Hook Form):
- *    - Realtime character counter (current / 2,200 max limit).
- *    - Location input, Alt text accessibility toggle, and filter presets.
- *    - Form submission function (`handleCreatePost`) ready for API integration with FormData.
- * 4. Detailed Hindi + English documentation for every architectural block.
+ * 📌 WHAT HAS BEEN CLEANED:
+ * 1. Removed unnecessary fields: 'Add alt text' aur 'Location' inputs hata diye gaye.
+ * 2. Only Core Fields Retained:
+ *    - Left Panel: Media Upload & Dynamic Carousel Preview (Max 5 images).
+ *    - Right Panel: Filter Presets, Caption Textarea (with 0/2,200 character counter).
+ * 3. 4-Layer Architecture Integration:
+ *    - FormData creation shifted to `postApi.js`.
+ *    - State & API execution managed via `UsePost` custom hook (`handlePost`, `loading`).
+ *    - Clean file extraction: `selectedImages.map(item => item.file)` passed directly.
+ * 4. Detailed Hindi + English comments for effortless maintenance.
  * ==============================================================================
  */
 
 const CreatePost = () => {
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
+  // 🧭 Custom Hook: loading state aur handlePost API function extract kiya
+  const { loading, handlePost } = UsePost();
+
   // ============================================================================
-  // 🧭 1. STATE MANAGEMENT
+  // 🧭 1. LOCAL UI STATE MANAGEMENT
   // ============================================================================
 
   // 1. Selected images array: Har item contains { file, previewUrl, id }
   const [selectedImages, setSelectedImages] = useState([]);
 
-  // 2. Active image index for carousel preview when multiple images exist
+  // 2. Active image index for carousel preview
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
 
-  // 3. Loading / Submitting state for API call
-  const [loading, setLoading] = useState(false);
-
-  // 4. Accessibility Alt Text toggle state
-  const [showAltText, setShowAltText] = useState(false);
-
-  // 5. Active image filter preset (optional styling from design reference)
+  // 3. Filter styling preset (Warm, Cool, Emerald, Normal)
   const [selectedFilter, setSelectedFilter] = useState("normal");
 
-  // 6. Drag-and-drop hover state
+  // 4. Drag and drop hover state
   const [isDragging, setIsDragging] = useState(false);
 
   // ============================================================================
@@ -61,19 +57,16 @@ const CreatePost = () => {
     mode: "onChange",
     defaultValues: {
       caption: "",
-      location: "",
-      altText: "",
     },
   });
 
-  // Caption input value ko watch karte hain taaki live character counter calculate ho sake
+  // Live caption character counter (max: 2,200 characters)
   const captionValue = watch("caption") || "";
   const MAX_CAPTION_LENGTH = 2200;
 
   // ============================================================================
   // 🖼️ 3. IMAGE SELECTION & VALIDATION ENGINE (MAX 5 IMAGES)
   // ============================================================================
-
   const handleFiles = (incomingFiles) => {
     clearErrors("images");
     const filesArray = Array.from(incomingFiles).filter((file) =>
@@ -88,11 +81,11 @@ const CreatePost = () => {
     // Strict Rule: Total images cannot exceed 5
     if (selectedImages.length + filesArray.length > 5) {
       setError("images", {
-        message: "Maximum 5 images allowed. Excess files were ignored.",
+        message: "Maximum 5 images allowed. Extra files were ignored.",
       });
     }
 
-    // First available slots up to 5
+    // Max 5 images limit
     const remainingSlots = 5 - selectedImages.length;
     const allowedFiles = filesArray.slice(0, remainingSlots);
 
@@ -105,14 +98,14 @@ const CreatePost = () => {
     setSelectedImages((prev) => [...prev, ...newMediaItems]);
   };
 
-  // File Input Change Handler
+  // Input file change
   const handleFileInputChange = (e) => {
     if (e.target.files) {
       handleFiles(e.target.files);
     }
   };
 
-  // Drag and Drop Handlers
+  // Drag & drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -131,12 +124,11 @@ const CreatePost = () => {
     }
   };
 
-  // Specific Image Remove Handler
+  // Remove specific image
   const handleRemoveImage = (indexToRemove, e) => {
     e.stopPropagation();
     setSelectedImages((prev) => {
       const updated = prev.filter((_, idx) => idx !== indexToRemove);
-      // Active index ko adjust karte hain agar last item remove hua ho
       if (activePreviewIndex >= updated.length) {
         setActivePreviewIndex(Math.max(0, updated.length - 1));
       }
@@ -144,7 +136,7 @@ const CreatePost = () => {
     });
   };
 
-  // Carousel slide change
+  // Carousel navigation
   const handlePrevSlide = (e) => {
     e.stopPropagation();
     setActivePreviewIndex((prev) => (prev > 0 ? prev - 1 : prev));
@@ -158,9 +150,9 @@ const CreatePost = () => {
   };
 
   // ============================================================================
-  // ⚡ 4. API SUBMIT FUNCTION (`handleCreatePost`)
+  // ⚡ 4. FORM SUBMISSION (CALLS HOOK'S handlePost)
   // ============================================================================
-  const handleCreatePost = async (formData) => {
+  const onFormSubmit = async (formData) => {
     // 1. Validation check: At least 1 image is required
     if (selectedImages.length === 0) {
       setError("images", {
@@ -169,49 +161,30 @@ const CreatePost = () => {
       return;
     }
 
-    setLoading(true);
     try {
-      // 2. FormData payload ready karna multipart API upload ke liye
-      const payload = new FormData();
-      payload.append("caption", formData.caption);
-      if (formData.location) payload.append("location", formData.location);
-      if (formData.altText) payload.append("altText", formData.altText);
+      // 2. Pure File objects extract karna (FormData api layer mein banega)
+      const rawImageFiles = selectedImages.map((item) => item.file);
 
-      // Sabhi selected images attach karna
-      selectedImages.forEach((item) => {
-        payload.append("images", item.file);
-      });
+      // 3. Hooks layer function call
+      const response = await handlePost(rawImageFiles, formData.caption);
 
-      console.log("Sending Post to Server API:", {
-        caption: formData.caption,
-        location: formData.location,
-        altText: formData.altText,
-        totalImages: selectedImages.length,
-      });
-
-      // 3. Yahan aap apna backend API call karenge:
-      // const response = await createPostApi(payload)
-      // alert('Post uploaded successfully!')
-
-      // Success hone par state reset:
-      // reset()
-      // setSelectedImages([])
-      // setActivePreviewIndex(0)
+      if (response) {
+        // Success hone par state reset aur feed/app par redirect
+        reset();
+        setSelectedImages([]);
+        setActivePreviewIndex(0);
+        navigate("/app");
+      }
     } catch (error) {
-      console.error("Post upload failed:", error);
-      setError("root", { message: "Failed to upload post. Please try again." });
-    } finally {
-      setLoading(false);
+      console.error("Post creation error in component:", error);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black sm:p-4 flex items-center justify-center font-sans text-white">
+    <div className="min-h-screen bg-black sm:p-4 flex items-center justify-center font-sans text-white select-none">
       {/* 
         ======================================================================
-        🎴 MAIN MODAL CONTAINER
-        - Dual-pane layout on Desktop (`md:grid-cols-2` or `lg:grid-cols-[1.1fr_0.9fr]`)
-        - Full-width seamless flow on Mobile
+        🎴 MAIN MODAL CONTAINER (DUAL-PANE RECTANGULAR DASHBOARD)
         ======================================================================
       */}
       <div className="w-full max-w-4xl bg-[#000000] border border-zinc-800/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative">
@@ -221,12 +194,11 @@ const CreatePost = () => {
           --------------------------------------------------------------------
         */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800/80 bg-[#16161d]">
-          {/* Title */}
           <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
             Create new post
           </h2>
 
-          {/* Breadcrumb Steps Indicator (From Screenshot: 1 Select media / 2 Edit / 3 Share) */}
+          {/* Breadcrumb Steps */}
           <div className="hidden sm:flex items-center gap-1.5 text-xs">
             <span className="font-semibold text-white">1 Select media</span>
             <span className="text-zinc-500">/</span>
@@ -235,8 +207,9 @@ const CreatePost = () => {
             <span className="text-zinc-500 font-medium">3 Share</span>
           </div>
 
-          {/* Close Modal Button (✕) */}
-          <button onClick={()=>{navigate(-1)}}
+          {/* Close Modal (✕) */}
+          <button
+            onClick={() => navigate(-1)}
             type="button"
             aria-label="Close"
             className="text-zinc-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
@@ -256,11 +229,11 @@ const CreatePost = () => {
 
         {/* 
           ====================================================================
-          🔲 MODAL BODY: DUAL-PANE GRID (Left: Media / Right: Form Details)
+          🔲 MODAL BODY: DUAL PANE (Left: Media / Right: Caption)
           ====================================================================
         */}
         <form
-          onSubmit={handleSubmit(handleCreatePost)}
+          onSubmit={handleSubmit(onFormSubmit)}
           className="flex-1 flex flex-col md:grid md:grid-cols-2"
         >
           {/* 
@@ -270,10 +243,7 @@ const CreatePost = () => {
           */}
           <div className="p-4 sm:p-6 border-b md:border-b-0 md:border-r border-zinc-800/80 flex flex-col items-center justify-center">
             {selectedImages.length === 0 ? (
-              /* ============================================================
-                 1. UPLOAD DROPZONE (STATE: NO IMAGES SELECTED)
-                 Matches exact design layout with pink media icon and button
-                 ============================================================ */
+              /* State 1: Dropzone (No images selected) */
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -284,7 +254,7 @@ const CreatePost = () => {
                     : "border-zinc-800 hover:border-zinc-700"
                 }`}
               >
-                {/* Media Icon with Pink Outline (From Screenshot) */}
+                {/* Media Icon with Pink Glow */}
                 <div className="w-14 h-14 rounded-2xl bg-[#1e1322] flex items-center justify-center mb-4 text-[#e1306c] shadow-lg shadow-pink-900/10">
                   <svg
                     className="w-7 h-7 stroke-current stroke-2 fill-none"
@@ -319,7 +289,6 @@ const CreatePost = () => {
                   You can upload up to 5 items
                 </p>
 
-                {/* Hidden File Input Tag */}
                 <input
                   type="file"
                   id="media-file-input"
@@ -329,7 +298,6 @@ const CreatePost = () => {
                   className="hidden"
                 />
 
-                {/* Styled 'Select from computer' Button */}
                 <label
                   htmlFor="media-file-input"
                   className="border border-[#e1306c]/60 hover:border-[#e1306c] text-white hover:bg-[#e1306c]/10 text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-xl cursor-pointer transition-all active:scale-95 shadow-sm"
@@ -338,13 +306,10 @@ const CreatePost = () => {
                 </label>
               </div>
             ) : (
-              /* ============================================================
-                 2. POST-SELECTION CAROUSEL PREVIEW (STATE: IMAGES LOADED)
-                 Shows active image preview, slide arrows, delete, and dots
-                 ============================================================ */
+              /* State 2: Carousel Preview (Images loaded) */
               <div className="w-full flex flex-col gap-3">
                 <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-black border border-zinc-800 shadow-xl group">
-                  {/* Active Preview Image */}
+                  {/* Current Active Preview Image with selected filter */}
                   <img
                     src={selectedImages[activePreviewIndex]?.previewUrl}
                     alt="Preview"
@@ -361,7 +326,7 @@ const CreatePost = () => {
                     }}
                   />
 
-                  {/* Top Counter Badge (e.g. 1/3) */}
+                  {/* Counter Badge (e.g. 1/3) */}
                   <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-full">
                     {activePreviewIndex + 1} / {selectedImages.length}
                   </div>
@@ -382,7 +347,7 @@ const CreatePost = () => {
                     </svg>
                   </button>
 
-                  {/* Carousel Previous Slide Arrow */}
+                  {/* Carousel Previous Arrow */}
                   {selectedImages.length > 1 && activePreviewIndex > 0 && (
                     <button
                       type="button"
@@ -398,7 +363,7 @@ const CreatePost = () => {
                     </button>
                   )}
 
-                  {/* Carousel Next Slide Arrow */}
+                  {/* Carousel Next Arrow */}
                   {selectedImages.length > 1 &&
                     activePreviewIndex < selectedImages.length - 1 && (
                       <button
@@ -415,7 +380,7 @@ const CreatePost = () => {
                       </button>
                     )}
 
-                  {/* Dot Indicators */}
+                  {/* Indicator Dots */}
                   {selectedImages.length > 1 && (
                     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/50 px-2 py-1 rounded-full backdrop-blur-sm">
                       {selectedImages.map((_, dotIdx) => (
@@ -448,7 +413,7 @@ const CreatePost = () => {
               </div>
             )}
 
-            {/* Validation Error Message */}
+            {/* Error Message */}
             {errors.images && (
               <p className="text-xs text-red-400 font-medium mt-2 animate-fadeIn">
                 {errors.images.message}
@@ -458,14 +423,14 @@ const CreatePost = () => {
 
           {/* 
             ------------------------------------------------------------------
-            📝 RIGHT PANE: POST DETAILS PANEL (Caption, Location, Alt Text)
+            📝 RIGHT PANE: FILTERS & CAPTION ONLY (CLEANED)
             ------------------------------------------------------------------
           */}
           <div className="p-4 sm:p-6 flex flex-col justify-between space-y-4">
-            <div className="space-y-4">
+            <div className="space-y-5">
               {/* Filter Swatches from Screenshot */}
               <div>
-                <span className="text-xs font-semibold text-zinc-400 block mb-2">
+                <span className="text-xs font-semibold text-zinc-400 block mb-2.5">
                   Filters & Styling
                 </span>
                 <div className="flex items-center gap-3">
@@ -497,7 +462,7 @@ const CreatePost = () => {
                         : "hover:opacity-90"
                     }`}
                   />
-                  {/* Emerald Preset */}
+                  {/* Emerald Mood Preset */}
                   <button
                     type="button"
                     onClick={() =>
@@ -514,111 +479,52 @@ const CreatePost = () => {
                 </div>
               </div>
 
-              {/* Header Title */}
-              <h3 className="text-sm font-bold text-white tracking-wide">
-                Post details
-              </h3>
+              {/* Post Details Section */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold text-white tracking-wide">
+                  Post details
+                </h3>
 
-              {/* 
-                Accessibility Toggle ("Add alt text")
-                Matches screenshot layout with toggle switch
-              */}
-              <div className="bg-[#171720] border border-zinc-800 rounded-xl p-3 flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs sm:text-sm font-semibold text-white">
-                    Add alt text
-                  </h4>
-                  <p className="text-[11px] text-zinc-500">
-                    Describe your media for accessibility
+                {/* Caption Textarea with 0/2,200 Character Counter */}
+                <div className="relative">
+                  <textarea
+                    {...register("caption", {
+                      maxLength: {
+                        value: MAX_CAPTION_LENGTH,
+                        message: `Caption cannot exceed ${MAX_CAPTION_LENGTH} characters`,
+                      },
+                    })}
+                    rows={6}
+                    placeholder="Write a caption..."
+                    className="w-full bg-[#101015] border border-zinc-800 hover:border-zinc-700 focus:border-zinc-600 text-white text-sm rounded-xl p-3.5 pb-8 placeholder:text-zinc-600 focus:outline-none transition-colors resize-none"
+                  />
+
+                  {/* Character Counter */}
+                  <div className="absolute bottom-3 right-3 text-[11px] font-medium text-zinc-500 select-none">
+                    {captionValue.length}/{MAX_CAPTION_LENGTH.toLocaleString()}
+                  </div>
+                </div>
+
+                {/* Caption Error Message */}
+                {errors.caption && (
+                  <p className="text-xs text-red-400 font-medium pt-1">
+                    {errors.caption.message}
                   </p>
-                </div>
-
-                {/* Toggle Switch */}
-                <button
-                  type="button"
-                  onClick={() => setShowAltText(!showAltText)}
-                  className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                    showAltText ? "bg-[#e1306c]" : "bg-zinc-800"
-                  }`}
-                >
-                  <div
-                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                      showAltText ? "translate-x-4" : "translate-x-0"
-                    }`}
-                  />
-                </button>
+                )}
               </div>
-
-              {/* Alt text input field if enabled */}
-              {showAltText && (
-                <div className="animate-fadeIn">
-                  <input
-                    {...register("altText")}
-                    type="text"
-                    placeholder="Write alt text..."
-                    className="w-full bg-[#101015] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
-                  />
-                </div>
-              )}
-
-              {/* 
-                Caption Textarea with Dynamic Character Counter Overlay
-                Max limit: 2,200 characters
-              */}
-              <div className="relative">
-                <textarea
-                  {...register("caption", {
-                    maxLength: {
-                      value: MAX_CAPTION_LENGTH,
-                      message: `Caption cannot exceed ${MAX_CAPTION_LENGTH} characters`,
-                    },
-                  })}
-                  rows={4}
-                  placeholder="Write a caption..."
-                  className="w-full bg-[#101015] border border-zinc-800 hover:border-zinc-700 focus:border-zinc-600 text-white text-sm rounded-xl p-3.5 pb-7 placeholder:text-zinc-600 focus:outline-none transition-colors resize-none"
-                />
-
-                {/* Dynamic Character Counter (e.g. 0/2,200) */}
-                <div className="absolute bottom-2.5 right-3 text-[11px] font-medium text-zinc-500 select-none">
-                  {captionValue.length}/{MAX_CAPTION_LENGTH.toLocaleString()}
-                </div>
-              </div>
-
-              {/* Caption Error Message */}
-              {errors.caption && (
-                <p className="text-xs text-red-400 font-medium">
-                  {errors.caption.message}
-                </p>
-              )}
-
-              {/* Location Input Box */}
-              <div>
-                <input
-                  {...register("location")}
-                  type="text"
-                  placeholder="Add location"
-                  className="w-full bg-[#101015] border border-zinc-800 hover:border-zinc-700 focus:border-zinc-600 text-white text-sm rounded-xl px-3.5 py-2.5 placeholder:text-zinc-600 focus:outline-none transition-colors"
-                />
-              </div>
-
-              {/* Accessibility Helper Subtext from Screenshot */}
-              <p className="text-[11px] text-zinc-500 leading-relaxed">
-                Adding alt text helps people with visual impairments understand
-                your post.
-              </p>
             </div>
 
             {/* 
               ------------------------------------------------------------------
               🚀 SUBMIT ACTION BUTTON ("Share")
-              - Vibrant Instagram sunset gradient with glow
+              - Uses loading state from UsePost hook
               ------------------------------------------------------------------
             */}
             <div className="flex items-center justify-end pt-4 border-t border-zinc-800/80">
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-gradient-to-r from-[#d62976] via-[#e1306c] to-[#fd5949] hover:opacity-95 active:scale-95 text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl shadow-lg shadow-pink-900/25 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-gradient-to-r from-[#d62976] via-[#e1306c] to-[#fd5949] hover:opacity-95 active:scale-95 text-white font-bold text-xs sm:text-sm px-7 py-2.5 rounded-xl shadow-lg shadow-pink-900/25 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

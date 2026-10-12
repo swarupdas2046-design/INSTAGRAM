@@ -1,6 +1,7 @@
 import React, { createContext, useState } from 'react'
-import { loginApi, registerApi } from './auth/services/auth.api'
+import { getMe, loginApi, registerApi } from './auth/services/auth.api'
 import { Flip, toast, Zoom } from 'react-toastify'
+import { useEffect } from 'react'
 
 export const AuthContext = createContext()
 
@@ -54,9 +55,26 @@ const AuthProvider = ({children}) => {
     }
 
 
+    const currentUser = async()=>{
+        setLoading(true)
+        try {
+            const response = await getMe()
+            return response
+        } catch (error) {
+            console.log("From getMe function :------>",error.response?.data)
+        }finally{
+            setLoading(false)
+        }
+    }
+
+
+
+
+
+
 
   return (
-    <AuthContext.Provider value={{user,loading,userRegister,userLogin}}>
+    <AuthContext.Provider value={{user,loading,userRegister,userLogin,currentUser}}>
         {children}
     </AuthContext.Provider>
   )

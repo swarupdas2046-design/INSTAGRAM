@@ -300,7 +300,7 @@ const Navbar = () => {
                 type="button"
                 onClick={() =>{ 
                     setActiveTab(item.id)
-                    if (item.id == "create") navigate("/createPost") 
+                    if (item.id == "create") navigate("/app/createPost") 
                 }}
                 className={`relative flex items-center gap-4 w-full p-3 rounded-xl transition-all duration-200 cursor-pointer text-left ${
                   isActive
@@ -467,7 +467,11 @@ const Navbar = () => {
         <button
           type="button"
           aria-label="Create Post"
-          onClick={() => setActiveTab("create")}
+          onClick={() => {
+            setActiveTab("create")
+            navigate("/app/createPost")
+            console.log("Create Post");
+          }}
           className="p-2 transition-transform active:scale-90 focus:outline-none"
         >
           <div className="w-6 h-6 border-2 border-current rounded-lg flex items-center justify-center text-white">
