@@ -1,38 +1,41 @@
-import express from 'express'
-import { acceptController, followRequestController, followUserController, rejectController, unfollowUserController } from '../controllers/follow.controller.js'
-import authMiddleware from '../middlewares/auth.middleware.js'
+import express from "express";
+import {
+  acceptController,
+  checkFollowStatusController,
+  followRequestController,
+  followUserController,
+  getFollowersController,
+  getFollowingController,
+  getSuggestedUsersController,
+  rejectController,
+  unfollowUserController,
+} from "../controllers/follow.controller.js";
+import authMiddleware from "../middlewares/auth.middleware.js";
 
-/**
- * api's: [
- *      http://localhost:8000/api/user/follow/:username
- *      http://localhost:8000/api/user/unfollow/:username
- * ]
- * access -> Only Authenticated Users
- */
+const followRouter = express.Router();
 
-const followRouter = express.Router()
+// ==============================================================================
+// 👥 FOLLOW / USER SOCIAL ROUTES
+// Base: /api/user
+// ==============================================================================
 
-/**
- * @route POST /api/user/follow/:username
- * @access authenticated user only
- * @description follow the user with the given username
- */
+// Follow & Unfollow
+followRouter.post("/follow/:username", authMiddleware, followUserController);
+followRouter.post("/unfollow/:username", authMiddleware, unfollowUserController);
 
-followRouter.post("/follow/:username",authMiddleware,followUserController)
+// Followers & Following lists
+followRouter.get("/followers/:username", authMiddleware, getFollowersController);
+followRouter.get("/following/:username", authMiddleware, getFollowingController);
 
-/**
- * @route POST /api/user/unfollow/:username
- * @access authenticated user only
- * @description unfollow the user with the given username
- */
-followRouter.post("/unfollow/:username",authMiddleware,unfollowUserController)
+// Suggested users (for home page sidebar)
+followRouter.get("/suggested", authMiddleware, getSuggestedUsersController);
 
+// Check if current user follows a specific user
+followRouter.get("/follow-status/:username", authMiddleware, checkFollowStatusController);
 
-followRouter.get("/follow/follow-requests",authMiddleware,followRequestController)
+// Follow request management (backward compatibility)
+followRouter.get("/follow/follow-requests", authMiddleware, followRequestController);
+followRouter.post("/follow/accept-request/:username", authMiddleware, acceptController);
+followRouter.post("/follow/reject-request/:username", authMiddleware, rejectController);
 
-followRouter.post("/follow/accept-request/:username",authMiddleware,acceptController)
-
-followRouter.post("/follow/reject-request/:username",authMiddleware,rejectController)
-
-
-export default followRouter
+export default followRouter;

@@ -1,52 +1,68 @@
 import express from "express";
 import multer from "multer";
 import {
+  addCommentController,
+  deleteCommentController,
+  getPostCommentsController,
+} from "../controllers/comment.controller.js";
+import {
   getAllPost,
+  getExploreFeedController,
   getFeesController,
+  getPostLikesController,
+  getSavedPostsController,
+  getUserPostsController,
   likePostController,
   PostController,
   postDetails,
+  savePostController,
+  unlikePostController,
+  unsavePostController,
 } from "../controllers/post.controller.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
+
 const Upload = multer({ storage: multer.memoryStorage() });
 const postRouter = express.Router();
 
-/**
- * - api's: [
- *      http://localhost:8000/api/post/
- *      http://localhost:8000/api/post/all-posts
- *      http://localhost:8000/api/post/detail/:id
- *      http://localhost:8000/api/post/like/:id
- * ]
- * - All methods are protected by auth middleware
- * - access -> Only Authenticated Users
- */
+// ==============================================================================
+// 📸 POST & COMMENT ROUTES
+// ==============================================================================
 
-postRouter.post("/", authMiddleware, Upload.array("imageUrl",5), PostController);
+// Create post (max 5 images)
+postRouter.post("/", authMiddleware, Upload.array("imageUrl", 5), PostController);
 
-/**
- * @route GET /api/post/all-posts
- * @access authenticated user only
- * @description returns all posts that belong to the authenticated user
- */
+// Current user ke apne posts
 postRouter.get("/all-posts", authMiddleware, getAllPost);
 
-/**
- * @route GET /api/post/detail/:id
- * @access authenticated user only
- * @description returns an detail of a specific post by id in the request params
- */
+// Home feed (posts from followed accounts)
+postRouter.get("/feed", authMiddleware, getFeesController);
 
+// Explore / Discovery feed (posts from all users)
+postRouter.get("/explore", authMiddleware, getExploreFeedController);
+
+// User profile posts by username
+postRouter.get("/user/:username", authMiddleware, getUserPostsController);
+
+// Current user's saved posts
+postRouter.get("/saved", authMiddleware, getSavedPostsController);
+
+// Post details by id
 postRouter.get("/detail/:id", authMiddleware, postDetails);
 
-/**
- * @route POST /api/post/like/:id
- * @access authenticated user only
- * @description like a post with the given id in the request params
- */
+// Like & Unlike post
 postRouter.post("/like/:id", authMiddleware, likePostController);
+postRouter.post("/unlike/:id", authMiddleware, unlikePostController);
 
+// Save & Unsave post
+postRouter.post("/save/:id", authMiddleware, savePostController);
+postRouter.post("/unsave/:id", authMiddleware, unsavePostController);
 
-postRouter.get("/feed",authMiddleware,getFeesController)
+// Users who liked a post
+postRouter.get("/likes/:id", authMiddleware, getPostLikesController);
+
+// Comments for a post
+postRouter.get("/comments/:id", authMiddleware, getPostCommentsController);
+postRouter.post("/comment/:id", authMiddleware, addCommentController);
+postRouter.delete("/comment/:commentId", authMiddleware, deleteCommentController);
 
 export default postRouter;

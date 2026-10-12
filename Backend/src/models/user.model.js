@@ -20,6 +20,12 @@ const userSchema = mongoose.Schema({
         minLength:[6,"Password must be at least 6 characters"],
         select:false
     },
+    // User ka display name (e.g. Swarup Das), profile header me dikhane ke liye
+    name:{
+        type:String,
+        default:"",
+        trim:true,
+    },
     bio:String,
     profileImage:{
         type:String,
