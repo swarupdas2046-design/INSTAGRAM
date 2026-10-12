@@ -1,10 +1,12 @@
 import axios from "axios";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "");
+
 // ==============================================================================
 // 📡 USER API SERVICE - Follow, Profile, Search
 // ==============================================================================
 const userAxios = axios.create({
-  baseURL: "http://localhost:8000/api/user",
+  baseURL: `${API_BASE_URL}/api/user`,
   withCredentials: true,
 });
 

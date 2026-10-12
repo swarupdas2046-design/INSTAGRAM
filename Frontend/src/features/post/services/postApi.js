@@ -1,10 +1,12 @@
 import axios from "axios";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "");
+
 // ==============================================================================
 // 📡 POST API SERVICE
 // ==============================================================================
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api/post",
+  baseURL: `${API_BASE_URL}/api/post`,
   withCredentials: true,
 });
 

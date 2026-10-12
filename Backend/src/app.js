@@ -8,6 +8,12 @@ import userProfileRouter from './routes/userProfile.route.js'
 import cors from 'cors'
 
 const app = express()
+app.set("trust proxy", 1)
+
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
 
 app.use((req, res, next) => {
     console.log("METHOD:", req.method)
@@ -19,7 +25,14 @@ app.use(express.json())
 app.use(cookie())
 app.use(cors({
     credentials: true,
-    origin: "http://localhost:5173"
+    origin: (origin, callback) => {
+        // Browser request ka origin allowed list me hona chahiye; Postman/no-origin requests allow kar rahe hain.
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true)
+        }
+
+        return callback(new Error("Not allowed by CORS"))
+    }
 }))
 app.use(express.urlencoded({ extended: true }))
 

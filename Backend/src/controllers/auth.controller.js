@@ -19,6 +19,13 @@ const userData = (user)=>{
     }
 }
 
+const cookieOptions = {
+    httpOnly:true,
+    path:"/",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production"
+}
+
 /**
  *- Register Controller
  *- api -> http://localhost:8000/api/auth/register
@@ -32,10 +39,7 @@ export const UserRegister = asyncHandler(async(req,res)=>{
     
         const {NewUser,JWT_Token} = await registerService(req.body)
 
-        res.cookie("jwt_token",JWT_Token,{
-            httpOnly:true,
-            path:"/",
-        })
+        res.cookie("jwt_token",JWT_Token,cookieOptions)
 
         return res.status(201).json(new ApiResponse("User Register Successfully",userData(NewUser)))
 
@@ -56,10 +60,7 @@ export const UserLogin = asyncHandler(async(req,res)=>{
         
         const {isExistedUser,jwt_token} = await loginService(req.body)
 
-        res.cookie("jwt_token",jwt_token,{
-            httpOnly:true,
-            path:"/",
-        })
+        res.cookie("jwt_token",jwt_token,cookieOptions)
 
         return res.status(200).json(new ApiResponse("Login Successfully",userData(isExistedUser)))
     
@@ -75,10 +76,7 @@ export const getMeController = (req,res)=>{
 
 export const logoutController = (req,res)=>{
     // httpOnly cookie ko frontend JS delete nahi kar sakta, isliye backend se clear karna zaroori hai.
-    res.clearCookie("jwt_token", {
-        httpOnly:true,
-        path:"/"
-    })
+    res.clearCookie("jwt_token", cookieOptions)
 
     return res.status(200).json(new ApiResponse("Logout Successfully",null))
 }
