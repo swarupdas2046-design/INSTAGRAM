@@ -7,12 +7,11 @@ const followSchema = new mongoose.Schema({
     followee:{
         type:String,
     },
+    // Instagram par public profiles ke liye follow instant 'accepted' hota hai
     status:{
         type:String,
-        default:"pending",
+        default:"accepted",
         enum: ["pending","accepted"],
-            // message:"Status must be either 'pending' or 'accepted'"
-        
     }
 },{
     timestamps:true
